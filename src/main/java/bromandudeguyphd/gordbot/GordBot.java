@@ -55,7 +55,8 @@ public class GordBot {
 
     public static Skype skype;
     public static User root;
-    private static final long startTime = System.currentTimeMillis();
+    static final long startTime = System.currentTimeMillis();
+    public static CommandFunctions commandSystem = new CommandFunctions();
 
     public static void main(String[] args){
         final Map<String, Command> commands = new HashMap<>();
@@ -85,12 +86,20 @@ public class GordBot {
             .flatMap(channel -> channel.createMessage("Pong!"))
             .then());
         
+        commands.put("uptime", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
+            .then());
+        
         
         commands.put("shutdown",  event -> event.getMessage().getChannel()
             .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete().and(gordbot.logout())))
             .then());
         
-
+        
+        commands.put("updatestatus", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
+            .then());
+        
 //Music Commands
         commands.put("join", event -> Mono.justOrEmpty(event.getMember())
             .flatMap(Member::getVoiceState)
@@ -121,16 +130,17 @@ public class GordBot {
         .subscribe();
         
         
-           
+        
 //Where the bot logs on A.K.A ====> MUST RUN LAST <====
         gordbot.login().block();
         
-        
+              
 //        try {
 //            bootSkype();
 //        }catch (InvalidCredentialsException | ConnectionException | NotParticipatingException ignored){}
     }
-
+    
+    
 
     public static void bootSkype() throws InvalidCredentialsException, ConnectionException, NotParticipatingException {
         String password = tokens.skypePassword();
@@ -169,49 +179,7 @@ public class GordBot {
 //        });
 //        skype.subscribe();
     }
-        
-        public static String getUptime() {
-            
-        long tEnd = System.currentTimeMillis();
-        long tDelta = tEnd - startTime;
-
-        int days = (int) TimeUnit.MILLISECONDS.toDays(tDelta);
-        long hrs = TimeUnit.MILLISECONDS.toHours(tDelta) - (days * 24);
-        long min = TimeUnit.MILLISECONDS.toMinutes(tDelta) - (TimeUnit.MILLISECONDS.toHours(tDelta) * 60);
-        long sec = TimeUnit.MILLISECONDS.toSeconds(tDelta) - (TimeUnit.MILLISECONDS.toMinutes(tDelta) * 60);
-
-        if(days != 00){
-            return String.format("%02dd:%02dh:%02dm:%02ds", days, hrs, min, sec);
-        }
-        return String.format("%02dh:%02dm:%02ds", hrs, min, sec);
-    }
-        
-        public static String getTimeFromMilis(long milis) {
-
-        long hrs = TimeUnit.MILLISECONDS.toHours(milis);
-        long min = TimeUnit.MILLISECONDS.toMinutes(milis) - (TimeUnit.MILLISECONDS.toHours(milis) * 60);
-        long sec = TimeUnit.MILLISECONDS.toSeconds(milis) - (TimeUnit.MILLISECONDS.toMinutes(milis) * 60);
-
-        return String.format("%02dh:%02dm:%02ds", hrs, min, sec);
-    }
-        
-        public static String getDateTime(){
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            
-            return dtf.format(now);
-        }
-        
-    public static Integer getRand() {
-        int Low = 0;
-        int High = 10;
-
-        int Result;
-        Random r = new Random();
-        Result = r.nextInt(High - Low) + Low;
-        return Result;
-    }
-
+    
     }
 
 
