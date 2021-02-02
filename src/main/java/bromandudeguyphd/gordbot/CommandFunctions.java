@@ -1,7 +1,7 @@
 package bromandudeguyphd.gordbot;
 
 import discord4j.core.DiscordClient;
-import discord4j.core.object.data.stored.PresenceBean;
+import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.Presence;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,15 +16,14 @@ public class CommandFunctions {
     
 //GordBot Commands
     public static String updateStatus(DiscordClient gordbot, String status){
-        PresenceBean bean = new PresenceBean();
-        bean.setStatus(status);
-        Presence presence = new Presence(bean);
-        gordbot.updatePresence(presence);
         
-        System.out.println("Guildcount: "+gordbot.getGuilds().count().toString());
-        System.out.println("Usercount: "+gordbot.getUsers().count().toString());
-        System.out.println("Status: "+gordbot.updatePresence(presence));
-            
+        
+        //gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog")));
+        //gordbot.
+             
+                
+        //Activity.streaming("Writing a food blog","https://www.sirbrobot.com");
+        //Activity.playing("Writing a food blog");
         return "Status Updated";
     }
         
@@ -44,7 +43,14 @@ public class CommandFunctions {
         return String.format("%02dh:%02dm:%02ds", hrs, min, sec);
     }
         
-    
+    public static Integer dice(int High) {
+        int Low = 0;
+
+        int Result;
+        Random r = new Random();
+        Result = r.nextInt(High - Low) + Low;
+        return Result;
+    }
     
     
     
@@ -69,15 +75,5 @@ public class CommandFunctions {
             return dtf.format(now);
         }
         
-    
-    public static Integer getRand() {
-        int Low = 0;
-        int High = 10;
-
-        int Result;
-        Random r = new Random();
-        Result = r.nextInt(High - Low) + Low;
-        return Result;
-    }
     
 }

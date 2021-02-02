@@ -12,22 +12,24 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
-import discord4j.common.jackson.Possible;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
+import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.VoiceState;
-import discord4j.core.object.data.stored.PresenceBean;
+import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
 import static discord4j.core.object.presence.Presence.online;
-import discord4j.gateway.json.StatusUpdate;
-import discord4j.gateway.json.StatusUpdate.Game;
-import discord4j.gateway.json.dispatch.PresenceUpdate;
+import discord4j.core.object.presence.Status;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -39,6 +41,27 @@ import java.util.concurrent.TimeUnit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+
+
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import discord4j.core.DiscordClient;
+import discord4j.core.DiscordClientBuilder;
+import discord4j.core.event.EventDispatcher;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.Guild;
+import discord4j.core.object.entity.Message;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 /**
  * @author BroManDudeGuyPhD
  */
@@ -47,7 +70,7 @@ import reactor.core.publisher.Mono;
 interface Command {
     // Since we are expecting to do reactive things in this method, like
     // send a message, then this method will also return a reactive type.
-    Mono<Void> execute(MessageCreateEvent event);
+    Mono<Void> execute(MessageCreateEvent event);   
 }
 
 
@@ -56,7 +79,6 @@ public class GordBot {
     public static Skype skype;
     public static User root;
     static final long startTime = System.currentTimeMillis();
-    public static CommandFunctions commandSystem = new CommandFunctions();
 
     public static void main(String[] args){
         final Map<String, Command> commands = new HashMap<>();
@@ -71,11 +93,22 @@ public class GordBot {
             // We will be creating LavaPlayerAudioProvider in the next step
         AudioProvider provider = new LavaPlayerAudioProvider(player);
 
+     //final DiscordClient gordbot = new DiscordClientBuilder(tokens.discordToken()).build();
+     //   gordbot.getEventDispatcher().on(ReadyEvent.class)
+     //       .subscribe(ready -> System.out.println("Logged in as " + ready.getSelf().getUsername()));
         
-    final DiscordClient gordbot = new DiscordClientBuilder(tokens.discordToken()).build();
-        gordbot.getEventDispatcher().on(ReadyEvent.class)
-            .subscribe(ready -> System.out.println("Logged in as " + ready.getSelf().getUsername()));
-        
+     final String token = tokens.discordToken();
+     final DiscordClient client = DiscordClient.create(token);
+     final GatewayDiscordClient gordbot = client.login().block();
+    
+     
+     gordbot.on(MessageCreateEvent.class).subscribe(event -> {
+      final Message message = event.getMessage();
+      if ("!ping".equals(message.getContent())) {
+        final MessageChannel channel = message.getChannel().block();
+        channel.createMessage("Pong!").block();
+      }
+    });
     
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
@@ -92,14 +125,15 @@ public class GordBot {
         
         
         commands.put("shutdown",  event -> event.getMessage().getChannel()
-            .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete().and(gordbot.logout())))
+            .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
+            .then(gordbot.logout())
             .then());
         
         
-        commands.put("updatestatus", event -> event.getMessage().getChannel()
-            .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
-            .then());
-        
+       // commands.put("updatestatus", event -> event.getMessage().getChannel()
+          //  .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
+          //  .then());
+              
 //Music Commands
         commands.put("join", event -> Mono.justOrEmpty(event.getMember())
             .flatMap(Member::getVoiceState)
@@ -111,37 +145,46 @@ public class GordBot {
 
         
         
-        final TrackScheduler scheduler = new TrackScheduler(player);
+//        final AudioTrackScheduler scheduler = new AudioTrackScheduler(player);
+//        
+//        commands.put("play", event -> Mono.justOrEmpty(event.getMessage().getContent())
+//            .map(content -> Arrays.asList(content.split(" ")))
+//            .doOnNext(command -> playerManager.loadItem(command.get(1), scheduler))
+//            .then());
         
-        commands.put("play", event -> Mono.justOrEmpty(event.getMessage().getContent())
-            .map(content -> Arrays.asList(content.split(" ")))
-            .doOnNext(command -> playerManager.loadItem(command.get(1), scheduler))
-            .then());
         
-        
-        
+        //Gets Commands by looking for stuff that starts with . and splitting  We will be using . as our "prefix" to any command in the system.
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
             .flatMap(event -> Mono.justOrEmpty(event.getMessage().getContent())
             .flatMap(content -> Flux.fromIterable(commands.entrySet())
-            // We will be using . as our "prefix" to any command in the system.
             .filter(entry -> content.startsWith('.' + entry.getKey()))
             .flatMap(entry -> entry.getValue().execute(event))
             .next()))
         .subscribe();
         
         
-        
-//Where the bot logs on A.K.A ====> MUST RUN LAST <====
-        gordbot.login().block();
-        
-              
+
 //        try {
 //            bootSkype();
 //        }catch (InvalidCredentialsException | ConnectionException | NotParticipatingException ignored){}
+    gordbot.onDisconnect().block();
+    
+    }//end of MAIN
+    
+    
+    
+    public static final AudioPlayerManager PLAYER_MANAGER;
+
+    static {
+        PLAYER_MANAGER = new DefaultAudioPlayerManager();
+        // This is an optimization strategy that Discord4J can utilize to minimize allocations
+        PLAYER_MANAGER.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
+        AudioSourceManagers.registerRemoteSources(PLAYER_MANAGER);
+        AudioSourceManagers.registerLocalSource(PLAYER_MANAGER);
     }
     
     
-
+    
     public static void bootSkype() throws InvalidCredentialsException, ConnectionException, NotParticipatingException {
         String password = tokens.skypePassword();
         skype = new SkypeBuilder("sirbrobot", password).withAllResources().build();
@@ -180,7 +223,9 @@ public class GordBot {
 //        skype.subscribe();
     }
     
+    
     }
+
 
 
 
