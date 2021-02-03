@@ -117,7 +117,6 @@ public class GordBot {
         .subscribe(event -> {
             final Guild guild = event.getGuild();
             System.out.println("Joined Guild: "+ guild.getName() + "OwnerID: "+guild.getOwnerId());
-            
         });
      
 //     gordbot.on(MessageCreateEvent.class).subscribe(event -> {
@@ -184,11 +183,7 @@ public class GordBot {
             //.filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
             .then(gordbot.logout())
             .then());
-        
-        
-        commands.put("test", event -> event.getMessage().getChannel()
-            .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
-            .then());
+    
         
         
         commands.put("uptime", event -> event.getMessage().getChannel()
@@ -203,9 +198,9 @@ public class GordBot {
             .flatMap(nickname -> nickname.changeSelfNickname(event.getMessage().getContent().replace(".nickname", "")))
             .then());
             
-       // commands.put("updatestatus", event -> event.getMessage().getChannel()
-          //  .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
-          //  .then());
+        commands.put("updatestatus", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage("Status updated!"))
+            .then(gordbot.updatePresence(Presence.online(Activity.playing(event.getMessage().getContent().replace(".updatestatus", ""))))));
               
 
 
