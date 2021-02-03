@@ -50,9 +50,11 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.EventDispatcher;
+import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
@@ -97,24 +99,54 @@ public class GordBot {
      //   gordbot.getEventDispatcher().on(ReadyEvent.class)
      //       .subscribe(ready -> System.out.println("Logged in as " + ready.getSelf().getUsername()));
         
-     final String token = tokens.discordToken();
-     final DiscordClient client = DiscordClient.create(token);
-     final GatewayDiscordClient gordbot = client.login().block();
+    final String token = tokens.discordToken();
+    final DiscordClient client = DiscordClient.create(token);
+    final GatewayDiscordClient gordbot = client.login().block();
     
+        gordbot.getEventDispatcher().on(ReadyEvent.class)
+        .subscribe(event -> {
+            final User self = event.getSelf();
+            System.out.println(String.format(
+                "Logged in as %s#%s", self.getUsername(), self.getDiscriminator()
+            ));
+        });
+        
+        gordbot.getEventDispatcher().on(GuildCreateEvent.class)
+        .subscribe(event -> {
+            final Guild guild = event.getGuild();
+            Snowflake owner = guild.getOwnerId();
+            
+            
+            
+            System.out.println("Joined Guild: "+ guild.getName());
+            
+        });
      
-     gordbot.on(MessageCreateEvent.class).subscribe(event -> {
-      final Message message = event.getMessage();
-      if ("!ping".equals(message.getContent())) {
-        final MessageChannel channel = message.getChannel().block();
-        channel.createMessage("Pong!").block();
-      }
-    });
+//     gordbot.on(MessageCreateEvent.class).subscribe(event -> {
+//      final Message message = event.getMessage();
+//      if ("!ping".equals(message.getContent())) {
+//        final MessageChannel channel = message.getChannel().block();
+//        channel.createMessage("Pong!").block();
+//      }
+//    });
+
+        gordbot.getEventDispatcher().on(MessageCreateEvent.class)
+            .map(MessageCreateEvent::getMessage)
+            .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
+            .filter(message -> message.getContent().equalsIgnoreCase("!ping"))
+            .flatMap(Message::getChannel)
+            .flatMap(channel -> channel.createMessage("Pong!"))
+            .subscribe();
     
+        
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
             .then());
-  
         
+        commands.put("dance", event -> event.getMessage().getChannel() 
+            .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
+            .then());
+  
         commands.put("ping", event -> event.getMessage().getChannel()
             .flatMap(channel -> channel.createMessage("Pong!"))
             .then());
@@ -124,6 +156,7 @@ public class GordBot {
             .then());
         
         
+//ADMIN COMMANDS
         commands.put("shutdown",  event -> event.getMessage().getChannel()
             .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
             .then(gordbot.logout())
