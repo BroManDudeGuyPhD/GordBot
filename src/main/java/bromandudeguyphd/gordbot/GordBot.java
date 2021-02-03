@@ -156,8 +156,8 @@ public class GordBot {
         
         commands.put("about", event -> event.getMessage().getChannel()
             .flatMap((MessageChannel channel) -> channel.createMessage(
-                    "Users: "+client.getGuilds().toString().length()+"\n"+
-                    "Servers: "+gordbot.getGuilds()+"\n"+
+                    "Users: "+gordbot.getGuilds().collectList().block().size()+"\n"+
+                    "Servers: "+client.getGuilds().toStream().count()+"\n"+
                     "Uptime: "+CommandFunctions.getUptime(startTime)+"\n"+
                     ""))
             .then());
