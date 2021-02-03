@@ -54,10 +54,13 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.event.EventDispatcher;
+import discord4j.core.event.domain.channel.PrivateChannelCreateEvent;
 import discord4j.core.event.domain.guild.MemberJoinEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
+import discord4j.rest.util.Image;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -99,8 +102,7 @@ public class GordBot {
      //   gordbot.getEventDispatcher().on(ReadyEvent.class)
      //       .subscribe(ready -> System.out.println("Logged in as " + ready.getSelf().getUsername()));
         
-    final String token = tokens.discordToken();
-    final DiscordClient client = DiscordClient.create(token);
+    final DiscordClient client = DiscordClient.create(tokens.discordToken());
     final GatewayDiscordClient gordbot = client.login().block();
     
         gordbot.getEventDispatcher().on(ReadyEvent.class)
@@ -137,25 +139,29 @@ public class GordBot {
             .flatMap(Message::getChannel)
             .flatMap(channel -> channel.createMessage("Pong!"))
             .subscribe();
-    
         
+        gordbot.getEventDispatcher().on(MessageCreateEvent.class)
+            .map(MessageCreateEvent::getMessage)
+            .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
+            .filter(message -> message.getUserMentionIds().contains(gordbot.getSelfId()))
+            .filter(message -> message.getContent().toLowerCase().contains("dance"))
+            .flatMap(Message::getChannel)
+            .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
+            .subscribe();
+    
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
             .then());
         
-        commands.put("dance", event -> event.getMessage().getChannel() 
-            .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
-            .then());
-        
-        commands.put("about", event -> event.getMessage().getChannel() 
+        commands.put("about", event -> event.getMessage().getChannel()
             .flatMap((MessageChannel channel) -> channel.createMessage(
                     "Users: "+client.getGuilds().toString().length()+"\n"+
-                    "Servers: "+client.getGuilds().toString().length()+"\n"+
+                    "Servers: "+gordbot.getGuilds()+"\n"+
                     "Uptime: "+CommandFunctions.getUptime(startTime)+"\n"+
                     ""))
             .then());
-  
+        
         commands.put("ping", event -> event.getMessage().getChannel()
             .flatMap(channel -> channel.createMessage("Pong!"))
             .then());
@@ -197,7 +203,10 @@ public class GordBot {
             .flatMap(channel -> channel.createMessage(event.getMessage().getContent().replace(".say ", "")))
             .then(event.getMessage().delete()));
         
-        
+        commands.put("nickname", event -> event.getGuild()
+            .flatMap(nickname -> nickname.changeSelfNickname(event.getMessage().getContent().replace(".nickname", "")))
+            .then());
+            
        // commands.put("updatestatus", event -> event.getMessage().getChannel()
           //  .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
           //  .then());
