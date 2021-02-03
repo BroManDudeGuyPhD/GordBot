@@ -116,11 +116,7 @@ public class GordBot {
         gordbot.getEventDispatcher().on(GuildCreateEvent.class)
         .subscribe(event -> {
             final Guild guild = event.getGuild();
-            Snowflake owner = guild.getOwnerId();
-            
-            
-            
-            System.out.println("Joined Guild: "+ guild.getName());
+            System.out.println("Joined Guild: "+ guild.getName() + "OwnerID: "+guild.getOwnerId());
             
         });
      
