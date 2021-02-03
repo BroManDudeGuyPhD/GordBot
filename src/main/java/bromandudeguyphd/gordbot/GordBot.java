@@ -141,10 +141,19 @@ public class GordBot {
         
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
+            .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
             .then());
         
         commands.put("dance", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
+            .then());
+        
+        commands.put("about", event -> event.getMessage().getChannel() 
+            .flatMap((MessageChannel channel) -> channel.createMessage(
+                    "Users: "+client.getGuilds().toString().length()+"\n"+
+                    "Servers: "+client.getGuilds().toString().length()+"\n"+
+                    "Uptime: "+CommandFunctions.getUptime(startTime)+"\n"+
+                    ""))
             .then());
   
         commands.put("ping", event -> event.getMessage().getChannel()
@@ -154,19 +163,7 @@ public class GordBot {
         commands.put("uptime", event -> event.getMessage().getChannel()
             .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
             .then());
-        
-        
-//ADMIN COMMANDS
-        commands.put("shutdown",  event -> event.getMessage().getChannel()
-            .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
-            .then(gordbot.logout())
-            .then());
-        
-        
-       // commands.put("updatestatus", event -> event.getMessage().getChannel()
-          //  .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
-          //  .then());
-              
+
 //Music Commands
         commands.put("join", event -> Mono.justOrEmpty(event.getMember())
             .flatMap(Member::getVoiceState)
@@ -175,6 +172,37 @@ public class GordBot {
             // adding disconnection features, but for now we are just ignoring it.
             .flatMap(channel -> channel.join(spec -> spec.setProvider(provider)).and(event.getMessage().delete()))
             .then());
+        
+        
+        
+//ADMIN COMMANDS
+        commands.put("shutdown",  event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
+            .filter(author -> event.getMessage().getAuthor().map(user -> user.getId().toString().equals("150074847546966017")).orElse(false))
+            //.filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
+            .then(gordbot.logout())
+            .then());
+        
+        
+        commands.put("test", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
+            .then());
+        
+        
+        commands.put("uptime", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
+            .then());
+        
+        commands.put("say", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage(event.getMessage().getContent().replace(".say ", "")))
+            .then(event.getMessage().delete()));
+        
+        
+       // commands.put("updatestatus", event -> event.getMessage().getChannel()
+          //  .flatMap(channel -> channel.createMessage(CommandFunctions.updateStatus(gordbot, event.getMessage().getContent().toString()))).and(event.getMessage().delete())
+          //  .then());
+              
+
 
         
         
