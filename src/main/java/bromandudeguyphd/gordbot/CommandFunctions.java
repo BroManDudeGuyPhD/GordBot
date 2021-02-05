@@ -12,21 +12,7 @@ import java.util.concurrent.TimeUnit;
  * @author BroManDudeGuyPhD
  * Class for command functions so GordBot.Java isn't flooded
  */
-public class CommandFunctions {
-    
-//GordBot Commands
-    public static String updateStatus(DiscordClient gordbot, String status){
-        
-        
-        //gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog")));
-        //gordbot.
-             
-                
-        //Activity.streaming("Writing a food blog","https://www.sirbrobot.com");
-        //Activity.playing("Writing a food blog");
-        return "Status Updated";
-    }
-        
+public class CommandFunctions {    
     public static String getUptime(long startTime) {
             
         long tEnd = System.currentTimeMillis();

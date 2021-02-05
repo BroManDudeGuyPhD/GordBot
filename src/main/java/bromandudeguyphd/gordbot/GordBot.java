@@ -117,16 +117,10 @@ public class GordBot {
         .subscribe(event -> {
             final Guild guild = event.getGuild();
             System.out.println("Joined Guild: "+ guild.getName() + "OwnerID: "+guild.getOwnerId());
+            //event.getClient().updatePresence(Presence.online(Activity.playing("Writing a food blog")));
+            //@BurneyProMod I am close to getting this, not sure what causes it to not update status on boot
         });
      
-//     gordbot.on(MessageCreateEvent.class).subscribe(event -> {
-//      final Message message = event.getMessage();
-//      if ("!ping".equals(message.getContent())) {
-//        final MessageChannel channel = message.getChannel().block();
-//        channel.createMessage("Pong!").block();
-//      }
-//    });
-
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
             .map(MessageCreateEvent::getMessage)
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
@@ -135,6 +129,7 @@ public class GordBot {
             .flatMap(channel -> channel.createMessage("Pong!"))
             .subscribe();
         
+//Bot is mentioned
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
             .map(MessageCreateEvent::getMessage)
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
@@ -144,6 +139,7 @@ public class GordBot {
             .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
             .subscribe();
     
+//Commands
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
