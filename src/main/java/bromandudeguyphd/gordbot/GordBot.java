@@ -13,7 +13,6 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import discord4j.core.DiscordClient;
-import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -27,44 +26,11 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
-import static discord4j.core.object.presence.Presence.online;
-import discord4j.core.object.presence.Status;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-
-
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import discord4j.common.util.Snowflake;
-import discord4j.core.DiscordClient;
-import discord4j.core.DiscordClientBuilder;
-import discord4j.core.event.EventDispatcher;
-import discord4j.core.event.domain.channel.PrivateChannelCreateEvent;
-import discord4j.core.event.domain.guild.MemberJoinEvent;
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.entity.Guild;
-import discord4j.core.object.entity.Message;
-import discord4j.rest.util.Image;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -130,6 +96,7 @@ public class GordBot {
             .subscribe();
         
 //Bot is mentioned
+        //Bot is mentioned
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
             .map(MessageCreateEvent::getMessage)
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
@@ -137,8 +104,9 @@ public class GordBot {
             .filter(message -> message.getContent().toLowerCase().contains("dance"))
             .flatMap(Message::getChannel)
             .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
+            .then()
             .subscribe();
-    
+            
 //Commands
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
@@ -228,6 +196,20 @@ public class GordBot {
     
     }//end of MAIN
     
+    //Method to find out what is in the mention message. I don't really understand Reactive yet lol
+    private static Mono<String> checkMention(String message) {
+        String response = "Test";
+        return Mono.fromSupplier(
+            () -> {
+                if (message.contains("dance")) {
+                    return  "https://sirbrobot.com/images/dancingKnight.gif";
+                } 
+                else if (message.contains("test")){
+                    return" Test passed";
+                }
+                return response;
+            });
+    }
     
     
     public static final AudioPlayerManager PLAYER_MANAGER;
