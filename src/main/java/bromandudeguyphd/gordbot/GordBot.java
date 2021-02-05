@@ -26,6 +26,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
+
 import java.util.HashMap;
 import java.util.Map;
 import reactor.core.publisher.Flux;
@@ -82,18 +83,18 @@ public class GordBot {
         gordbot.getEventDispatcher().on(GuildCreateEvent.class)
         .subscribe(event -> {
             final Guild guild = event.getGuild();
-            System.out.println("Joined Guild: "+ guild.getName() + "OwnerID: "+guild.getOwnerId());
+            System.out.println("Joined Guild: "+ guild.getName());
             //event.getClient().updatePresence(Presence.online(Activity.playing("Writing a food blog")));
             //@BurneyProMod I am close to getting this, not sure what causes it to not update status on boot
         });
      
-        gordbot.getEventDispatcher().on(MessageCreateEvent.class)
-            .map(MessageCreateEvent::getMessage)
-            .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
-            .filter(message -> message.getContent().equalsIgnoreCase("!ping"))
-            .flatMap(Message::getChannel)
-            .flatMap(channel -> channel.createMessage("Pong!"))
-            .subscribe();
+        // gordbot.getEventDispatcher().on(MessageCreateEvent.class)
+        //     .map(MessageCreateEvent::getMessage)
+        //     .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
+        //     .filter(message -> message.getContent().equalsIgnoreCase("!ping"))
+        //     .flatMap(Message::getChannel)
+        //     .flatMap(channel -> channel.createMessage("Pong!"))
+        //     .subscribe();
         
 //Bot is mentioned
         //Bot is mentioned
@@ -101,12 +102,11 @@ public class GordBot {
             .map(MessageCreateEvent::getMessage)
             .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false))
             .filter(message -> message.getUserMentionIds().contains(gordbot.getSelfId()))
-            .filter(message -> message.getContent().toLowerCase().contains("dance"))
+            .filter(message -> message.getContent().toLowerCase().contains("dance"))            
             .flatMap(Message::getChannel)
-            .flatMap(channel -> channel.createMessage("https://sirbrobot.com/images/dancingKnight.gif"))
-            .then()
-            .subscribe();
-            
+            .flatMap(channel -> channel.createMessage("DANCE"))
+        .subscribe();   
+
 //Commands
         commands.put("commands", event -> event.getMessage().getChannel() 
             .flatMap(channel -> channel.createMessage("Not much here yet!"))
@@ -126,7 +126,11 @@ public class GordBot {
             .then());
         
         commands.put("uptime", event -> event.getMessage().getChannel()
-            .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
+        .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime)))
+            .then());
+
+        commands.put("invite", event -> event.getMessage().getChannel()
+            .flatMap(channel -> channel.createMessage("Invite me with: https://discord.com/oauth2/authorize?client_id=697886793739010111&scope=bot&permissions=8"))
             .then());
 
 //Music Commands
@@ -197,14 +201,14 @@ public class GordBot {
     }//end of MAIN
     
     //Method to find out what is in the mention message. I don't really understand Reactive yet lol
-    private static Mono<String> checkMention(String message) {
+    private static Mono<String> checkMention(Message message) {
         String response = "Test";
         return Mono.fromSupplier(
             () -> {
-                if (message.contains("dance")) {
+                if (message.getContent().contains("dance")) {
                     return  "https://sirbrobot.com/images/dancingKnight.gif";
                 } 
-                else if (message.contains("test")){
+                else if (message.getContent().contains("test")){
                     return" Test passed";
                 }
                 return response;
