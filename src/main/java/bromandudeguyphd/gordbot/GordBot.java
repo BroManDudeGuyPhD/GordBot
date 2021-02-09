@@ -120,8 +120,26 @@ public class GordBot {
 
         // Commands
         commands.put("commands",
-                event -> event.getMessage().getChannel().flatMap(channel -> channel.createMessage("Not much here yet!"))
-                        .filter(message -> message.getAuthor().map(user -> !user.isBot()).orElse(false)).then());
+                event -> event.getMessage().getChannel().flatMap(channel -> channel.createEmbed(spec -> spec.setColor(Color.RED)
+                .setTitle("GordBot commands").setUrl("https://www.youtube.com/watch?v=Gc2u6AFImn8")
+
+                .addField("commands", "See this list", false)
+                .addField("about", "See bot stats", false)
+                .addField("uptime", "See uptime", false)
+                .addField("join", "Bot joins current voice channel", false)
+                .setTimestamp(Instant.now()))).then());
+
+        commands.put("ocommands",
+                event -> event.getMessage().getChannel().flatMap(channel -> channel.createEmbed(spec -> spec.setColor(Color.RED)
+                .setTitle("GordBot OWNER commands").setUrl("https://www.youtube.com/watch?v=Gc2u6AFImn8")
+
+                .addField("ocommands", "See this list", false)
+                .addField("shutdown", "What do you think", false)
+                .addField("say", "Bot will say something", false)
+                .addField("nick", "Change bot's nickname on server", false)
+                .addField("updatestatus", "Change bot status", false)
+                .setTimestamp(Instant.now()))).then());
+
 
         commands.put("about",
                 event -> event.getMessage().getChannel()
@@ -139,7 +157,8 @@ public class GordBot {
                         .setTitle("setTitle/setUrl").setUrl("https://www.youtube.com/watch?v=Gc2u6AFImn8")
                         .setDescription("setDescription\n" + "big D: is setImage\n" + "small D: is setThumbnail\n"
                                 + "<-- setColor")
-                        .addField("addField", "inline = true", true).addField("addFIeld", "inline = true", true)
+                        .addField("addField", "inline = true", true)
+                        .addField("addFIeld", "inline = true", true)
                         .addField("addFile", "inline = false", false)
                         .setThumbnail("https://cdn.betterttv.net/emote/55028cd2135896936880fdd7/3x")
                         .setFooter("setFooter --> setTimestamp",
@@ -171,9 +190,6 @@ public class GordBot {
                         // .filter(message -> message.getAuthor().map(user ->
                         // !user.isBot()).orElse(false))
                         .then(gordbot.logout()).then());
-
-        commands.put("uptime", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(CommandFunctions.getUptime(startTime))).then());
 
         commands.put("say",
                 event -> event.getMessage().getChannel()
