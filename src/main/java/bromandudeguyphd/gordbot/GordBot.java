@@ -105,6 +105,7 @@ public class GordBot {
 
         Map<String, String> mentionMap = new HashMap<String, String>();
         mentionMap.put("dance", "https://sirbrobot.com/images/dancingKnight.gif");
+        mentionMap.put("test", "Test PASSED!");
 
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
                 .map(MessageCreateEvent::getMessage)
