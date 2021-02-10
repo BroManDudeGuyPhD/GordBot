@@ -1,10 +1,5 @@
 package bromandudeguyphd.gordbot;
 
-import discord4j.core.DiscordClient;
-import discord4j.core.object.presence.Activity;
-import discord4j.core.object.presence.Presence;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -37,29 +32,4 @@ public class CommandFunctions {
         Result = r.nextInt(High - Low) + Low;
         return Result;
     }
-    
-    
-    
-    
-    
-    
-    
-//Internal Class Functions
-    private static String getTimeFromMilis(long milis) {
-
-        long hrs = TimeUnit.MILLISECONDS.toHours(milis);
-        long min = TimeUnit.MILLISECONDS.toMinutes(milis) - (TimeUnit.MILLISECONDS.toHours(milis) * 60);
-        long sec = TimeUnit.MILLISECONDS.toSeconds(milis) - (TimeUnit.MILLISECONDS.toMinutes(milis) * 60);
-
-        return String.format("%02dh:%02dm:%02ds", hrs, min, sec);
-    }
-        
-    private static String getDateTime(){
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            
-            return dtf.format(now);
-        }
-        
-    
 }

@@ -15,7 +15,6 @@ import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBu
 
 import bromandudeguyphd.gordbot.music.LavaPlayerAudioProvider;
 import bromandudeguyphd.gordbot.music.TrackScheduler;
-import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
@@ -30,10 +29,8 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Color;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
