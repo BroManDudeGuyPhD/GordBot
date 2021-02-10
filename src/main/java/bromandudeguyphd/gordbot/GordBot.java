@@ -80,15 +80,13 @@ public class GordBot {
         gordbot.getEventDispatcher().on(ReadyEvent.class).subscribe(event -> {
             final User self = event.getSelf();
             System.out.println(String.format("Logged in as %s#%s", self.getUsername(), self.getDiscriminator()));
+            gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog"))).block();
         });
 
         gordbot.getEventDispatcher().on(GuildCreateEvent.class).subscribe(event -> {
             final Guild guild = event.getGuild();
             System.out.println("Joined Guild: " + guild.getName());
-            // event.getClient().updatePresence(Presence.online(Activity.playing("Writing a
-            // food blog")));
-            // @BurneyProMod I am close to getting this, not sure what causes it to not
-            // update status on boot
+ 
         });
 
         // gordbot.getEventDispatcher().on(MessageCreateEvent.class)
