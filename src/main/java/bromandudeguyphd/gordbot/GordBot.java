@@ -14,6 +14,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 
 import bromandudeguyphd.gordbot.music.LavaPlayerAudioProvider;
+import bromandudeguyphd.gordbot.music.TrackScheduler;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
@@ -34,6 +35,7 @@ import discord4j.rest.util.Color;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import reactor.core.publisher.Flux;
@@ -57,15 +59,21 @@ public class GordBot {
 
     public static void main(String[] args) {
         final Map<String, Command> commands = new HashMap<>();
+       
+       
         // Creates AudioPlayer instances and translates URLs to AudioTrack instances
         final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        // This is an optimization strategy that Discord4J can utilize. It is not
-        // important to understand
+
+        // This is an optimization strategy that Discord4J can utilize.
+        // It is not important to understand
         playerManager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
+
         // Allow playerManager to parse remote sources like YouTube links
         AudioSourceManagers.registerRemoteSources(playerManager);
+
         // Create an AudioPlayer so Discord4J can receive audio data
         final AudioPlayer player = playerManager.createPlayer();
+
         // We will be creating LavaPlayerAudioProvider in the next step
         AudioProvider provider = new LavaPlayerAudioProvider(player);
 
@@ -173,15 +181,8 @@ public class GordBot {
                 "Invite me with: https://discord.com/oauth2/authorize?client_id=697886793739010111&scope=bot&permissions=8"))
                 .then());
 
-        // Music Commands
-        commands.put("join", event -> Mono.justOrEmpty(event.getMember()).flatMap(Member::getVoiceState)
-                .flatMap(VoiceState::getChannel)
-                // join returns a VoiceConnection which would be required if we were
-                // adding disconnection features, but for now we are just ignoring it.
-                .flatMap(channel -> channel.join(spec -> spec.setProvider(provider)).and(event.getMessage().delete()))
-                .then());
 
-        // ADMIN COMMANDS
+// ADMIN COMMANDS
         commands.put("shutdown",
                 event -> event.getMessage().getChannel()
                         .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
@@ -204,14 +205,24 @@ public class GordBot {
                 .flatMap(channel -> channel.createMessage("Status updated!")).then(gordbot.updatePresence(Presence
                         .online(Activity.playing(event.getMessage().getContent().replace(".updatestatus", ""))))));
 
-        // final AudioTrackScheduler scheduler = new AudioTrackScheduler(player);
-        //
-        // commands.put("play", event ->
-        // Mono.justOrEmpty(event.getMessage().getContent())
-        // .map(content -> Arrays.asList(content.split(" ")))
-        // .doOnNext(command -> playerManager.loadItem(command.get(1), scheduler))
-        // .then());
 
+
+// Music Commands
+        commands.put("join", event -> Mono.justOrEmpty(event.getMember()).flatMap(Member::getVoiceState)
+                .flatMap(VoiceState::getChannel)
+                // join returns a VoiceConnection which would be required if we were
+                // adding disconnection features, but for now we are just ignoring it.
+                .flatMap(channel -> channel.join(spec -> spec.setProvider(provider)).and(event.getMessage().delete()))
+                .then());
+
+        final TrackScheduler scheduler = new TrackScheduler(player);
+        commands.put("play", event -> Mono.justOrEmpty(event.getMessage().getContent())
+            .map(content -> Arrays.asList(content.split(" ")))
+            .doOnNext(command -> playerManager.loadItem(command.get(1), scheduler))
+            .then());
+
+
+        
         // Gets Commands by looking for stuff that starts with . and splitting We will
         // be using . as our "prefix" to any command in the system.
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
