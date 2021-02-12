@@ -15,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBu
 
 import bromandudeguyphd.gordbot.music.LavaPlayerAudioProvider;
 import bromandudeguyphd.gordbot.music.TrackScheduler;
+import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
@@ -29,8 +30,10 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.Color;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -86,7 +89,8 @@ public class GordBot {
         gordbot.getEventDispatcher().on(ReadyEvent.class).subscribe(event -> {
             final User self = event.getSelf();
             System.out.println(String.format("Logged in as %s#%s", self.getUsername(), self.getDiscriminator()));
-            gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog"))).block();
+            //gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog"))).block();
+            gordbot.updatePresence(Presence.online(Activity.streaming("Writing a food blog", "https://www.twitch.tv/SirBroBot/videos"))).block();
         });
 
         gordbot.getEventDispatcher().on(GuildCreateEvent.class).subscribe(event -> {
@@ -180,17 +184,15 @@ public class GordBot {
 
 
 // ADMIN COMMANDS
-        commands.put("shutdown",
-                event -> event.getMessage().getChannel()
+        commands.put("shutdown",event -> event.getMessage().getChannel()
                         .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
-                        .filter(author -> event.getMessage().getAuthor()
-                                .map(user -> user.getId().toString().equals("150074847546966017")).orElse(false))
+                        .filter(author -> event.getMessage().getAuthor().get().getId().asString().equals("150074847546966017"))
+                                
                         // .filter(message -> message.getAuthor().map(user ->
                         // !user.isBot()).orElse(false))
                         .then(gordbot.logout()).then());
 
-        commands.put("say",
-                event -> event.getMessage().getChannel()
+        commands.put("say",event -> event.getMessage().getChannel()
                         .flatMap(channel -> channel.createMessage(event.getMessage().getContent().replace(".say ", "")))
                         .then(event.getMessage().delete()));
 
@@ -200,7 +202,7 @@ public class GordBot {
 
         commands.put("updatestatus", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage("Status updated!")).then(gordbot.updatePresence(Presence
-                        .online(Activity.playing(event.getMessage().getContent().replace(".updatestatus", ""))))));
+                        .online(Activity.streaming(event.getMessage().getContent().replace(".updatestatus", ""),"https://www.twitch.tv/SirBroBot/videos")))));
 
 
 
@@ -236,19 +238,6 @@ public class GordBot {
         gordbot.onDisconnect().block();
 
     }// end of MAIN
-    
-    
-    
-    public static final AudioPlayerManager PLAYER_MANAGER;
-
-    static {
-        PLAYER_MANAGER = new DefaultAudioPlayerManager();
-        // This is an optimization strategy that Discord4J can utilize to minimize allocations
-        PLAYER_MANAGER.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
-        AudioSourceManagers.registerRemoteSources(PLAYER_MANAGER);
-        AudioSourceManagers.registerLocalSource(PLAYER_MANAGER);
-    }
-    
     
     
     public static void bootSkype() throws InvalidCredentialsException, ConnectionException, NotParticipatingException {
