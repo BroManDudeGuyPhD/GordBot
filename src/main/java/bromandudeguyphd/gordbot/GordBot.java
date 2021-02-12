@@ -30,13 +30,10 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.ApplicationInfoData;
 import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.Color;
 
-import java.io.Serializable;
-import java.lang.System.Logger;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,13 +48,12 @@ import reactor.core.publisher.Mono;
  */
 
 interface Command {
-    // Since we are expecting to do reactive things in this method, like
-    // send a message, then this method will also return a reactive type.
     Mono<Void> execute(MessageCreateEvent event);
 }
 
 public class GordBot {
         private static final AtomicLong OWNER_ID = new AtomicLong();
+        public static final String COMMAND_PREFIX = ".";
         public static Skype skype;
         public static User root;
         static final long startTime = System.currentTimeMillis();
@@ -141,21 +137,22 @@ public class GordBot {
                 event -> event.getMessage().getChannel().flatMap(channel -> channel.createEmbed(spec -> spec.setColor(Color.RED)
                 .setTitle("GordBot commands").setUrl("https://www.youtube.com/watch?v=Gc2u6AFImn8")
 
-                .addField("commands", "See this list", false)
-                .addField("about", "See bot stats", false)
-                .addField("uptime", "See uptime", false)
-                .addField("join", "Bot joins current voice channel", false)
+                .addField(GordBot.COMMAND_PREFIX+"commands", "See this list", false)
+                .addField(GordBot.COMMAND_PREFIX+"about", "See bot stats", false)
+                .addField(GordBot.COMMAND_PREFIX+"uptime", "See uptime", false)
+                .addField(GordBot.COMMAND_PREFIX+"join", "Bot joins current voice channel", false)
+                .addField(GordBot.COMMAND_PREFIX+"d#", "rolls # sided die", false)
                 .setTimestamp(Instant.now()))).then());
 
         commands.put("ocommands",
                 event -> event.getMessage().getChannel().flatMap(channel -> channel.createEmbed(spec -> spec.setColor(Color.RED)
                 .setTitle("GordBot OWNER commands").setUrl("https://www.youtube.com/watch?v=Gc2u6AFImn8")
 
-                .addField("ocommands", "See this list", false)
-                .addField("shutdown", "What do you think", false)
-                .addField("say", "Bot will say something", false)
-                .addField("nick", "Change bot's nickname on server", false)
-                .addField("updatestatus", "Change bot status", false)
+                .addField(GordBot.COMMAND_PREFIX+"ocommands", "See this list", false)
+                .addField(GordBot.COMMAND_PREFIX+"shutdown", "What do you think", false)
+                .addField(GordBot.COMMAND_PREFIX+"say", "Bot will say something", false)
+                .addField(GordBot.COMMAND_PREFIX+"nick", "Change bot's nickname on server", false)
+                .addField(GordBot.COMMAND_PREFIX+"updatestatus", "Change bot status", false)
                 .setTimestamp(Instant.now()))).then());
 
 
@@ -191,6 +188,10 @@ public class GordBot {
                 "Invite me with: https://discord.com/oauth2/authorize?client_id=697886793739010111&scope=bot&permissions=8"))
                 .then());
 
+        commands.put("d", event -> event.getMessage().getChannel()
+                .flatMap(channel -> channel.createMessage(CommandFunctions.dice(event.getMessage().getContent().split(GordBot.COMMAND_PREFIX+"d"))))
+                .then(event.getMessage().delete()));
+
 
 // ADMIN COMMANDS
         commands.put("shutdown",event -> event.getMessage().getChannel()
@@ -202,16 +203,16 @@ public class GordBot {
                         .then(gordbot.logout()).then());
 
         commands.put("say",event -> event.getMessage().getChannel()
-                        .flatMap(channel -> channel.createMessage(event.getMessage().getContent().replace(".say ", "")))
+                        .flatMap(channel -> channel.createMessage(event.getMessage().getContent().replace(GordBot.COMMAND_PREFIX+"say ", "")))
                         .then(event.getMessage().delete()));
 
         commands.put("nickname", event -> event.getGuild().flatMap(
-                nickname -> nickname.changeSelfNickname(event.getMessage().getContent().replace(".nickname", "")))
+                nickname -> nickname.changeSelfNickname(event.getMessage().getContent().replace(GordBot.COMMAND_PREFIX+"nickname", "")))
                 .then());
 
         commands.put("updatestatus", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage("Status updated!")).then(gordbot.updatePresence(Presence
-                        .online(Activity.streaming(event.getMessage().getContent().replace(".updatestatus", ""),"https://www.twitch.tv/SirBroBot/videos")))));
+                        .online(Activity.streaming(event.getMessage().getContent().replace(GordBot.COMMAND_PREFIX+"updatestatus", ""),"https://www.twitch.tv/SirBroBot/videos")))));
 
 
 
@@ -236,7 +237,7 @@ public class GordBot {
         gordbot.getEventDispatcher().on(MessageCreateEvent.class)
                 .flatMap(event -> Mono.justOrEmpty(event.getMessage().getContent())
                         .flatMap(content -> Flux.fromIterable(commands.entrySet())
-                                .filter(entry -> content.startsWith('.' + entry.getKey()))
+                                .filter(entry -> content.startsWith(GordBot.COMMAND_PREFIX + entry.getKey()))
                                 .flatMap(entry -> entry.getValue().execute(event)).next()))
                 .subscribe();
 
