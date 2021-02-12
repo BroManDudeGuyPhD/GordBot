@@ -31,13 +31,18 @@ import discord4j.core.object.presence.Activity;
 import discord4j.voice.AudioProvider;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.discordjson.json.ApplicationInfoData;
+import discord4j.discordjson.json.UserData;
 import discord4j.rest.util.Color;
 
 import java.io.Serializable;
+import java.lang.System.Logger;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -52,10 +57,10 @@ interface Command {
 }
 
 public class GordBot {
-
-    public static Skype skype;
-    public static User root;
-    static final long startTime = System.currentTimeMillis();
+        private static final AtomicLong OWNER_ID = new AtomicLong();
+        public static Skype skype;
+        public static User root;
+        static final long startTime = System.currentTimeMillis();
 
     public static void main(String[] args) {
         final Map<String, Command> commands = new HashMap<>();
@@ -77,11 +82,6 @@ public class GordBot {
         // We will be creating LavaPlayerAudioProvider in the next step
         AudioProvider provider = new LavaPlayerAudioProvider(player);
 
-        // final DiscordClient gordbot = new
-        // DiscordClientBuilder(tokens.discordToken()).build();
-        // gordbot.getEventDispatcher().on(ReadyEvent.class)
-        // .subscribe(ready -> System.out.println("Logged in as " +
-        // ready.getSelf().getUsername()));
 
         final DiscordClient client = DiscordClient.create(tokens.discordToken());
         final GatewayDiscordClient gordbot = client.login().block();
@@ -89,8 +89,17 @@ public class GordBot {
         gordbot.getEventDispatcher().on(ReadyEvent.class).subscribe(event -> {
             final User self = event.getSelf();
             System.out.println(String.format("Logged in as %s#%s", self.getUsername(), self.getDiscriminator()));
-            //gordbot.updatePresence(Presence.online(Activity.playing("Writing a food blog"))).block();
             gordbot.updatePresence(Presence.online(Activity.streaming("Writing a food blog", "https://www.twitch.tv/SirBroBot/videos"))).block();
+
+            client.getApplicationInfo()
+                .map(ApplicationInfoData::owner)
+                .map(UserData::id)
+                .map(Snowflake::asLong)
+                .doOnNext(ownerId -> {
+                    System.out.println("Owner ID acquired: "+ ownerId);
+                    GordBot.OWNER_ID.set(ownerId);
+                })
+                .block();
         });
 
         gordbot.getEventDispatcher().on(GuildCreateEvent.class).subscribe(event -> {
@@ -186,7 +195,7 @@ public class GordBot {
 // ADMIN COMMANDS
         commands.put("shutdown",event -> event.getMessage().getChannel()
                         .flatMap(channel -> channel.createMessage("Goodbye!").and(event.getMessage().delete()))
-                        .filter(author -> event.getMessage().getAuthor().get().getId().asString().equals("150074847546966017"))
+                        .filter(author -> event.getMessage().getAuthor().get().getId().toString().equals(GordBot.OWNER_ID.toString()))
                                 
                         // .filter(message -> message.getAuthor().map(user ->
                         // !user.isBot()).orElse(false))
